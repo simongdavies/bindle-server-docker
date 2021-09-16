@@ -1,0 +1,82 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+    "handler": "Microsoft.Azure.CreateUIDef",
+    "version": "0.1.2-preview",
+    "parameters": {
+        "config": {
+            "basics": {
+                "description": "Deploy a Bindle Server.",
+                "subscription": {
+                    "constraints": {
+                        "validations": [
+                            {
+                                "permission": "Microsoft.ContainerInstance/containerGroups/write",
+                                "message": "Permission to create Container Instance is needed in resource group "
+                            },
+                            {
+                                "permission": "Microsoft.Storage/storageAccounts/write",
+                                "message": "Permission to create Storage Accounts is needed in resource group "
+                            },
+                            {
+                                "permission": "Microsoft.Storage/storageAccounts/fileServices/shares/write",
+                                "message": "Permission to create Storage Account File Shares is needed in resource group "
+                            }
+                        ]
+                    }
+                },
+                "resourceGroup": {
+                    "constraints": {},
+                    "allowExisting": true
+                },
+                "location": {
+                    "label": "Location",
+                    "toolTip": "This is the location where the Container Group and storage for the bindle server will be hosted.",
+                    "resourceTypes": [
+                        "Microsoft.ContainerInstance/containerGroups",
+                        "Microsoft.Storage/storageAccounts",
+                        "Microsoft.Storage/storageAccounts/fileServices/shares"
+                    ],
+                    "visible": true
+                }
+            }
+        },
+        "basics": [
+            {
+                "name": "bindle_server_username",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Bindle Server User Name",
+                "visible": true,
+                "toolTip": "The User Name for write access to the bindle server",
+                "defaultValue": "bindleuser",
+                "constraints": {
+                    "required": true,
+                    "validations": [
+                        {}
+                    ]
+                }
+            },   
+            {
+                    "name": "bindle_server_password",
+                    "type": "Microsoft.Common.PasswordBox",
+                    "label": {
+                        "password": "Bindle Server Password",
+                        "confirmPassword": "Confirm The Bindle Server Password"
+                    },
+                    "visible": true,
+                    "toolTip": "The Password for write access to the bindle server",
+                    "options": {},
+                    "constraints": {
+                        "required": true,
+                        "regex": "^((?=.*\\d)(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%]).{12,})",
+                        "validationMessage": "Password must be at least 12 characters long and contain at least one letter, one number and one of !@#$%"
+                    }
+                }
+            ],
+            "steps": [],
+            "outputs": {
+                "bindleServerUserName": "[basics('bindle_server_username')]",
+                "bindleServerPassword": "[basics('bindle_server_password')]",
+                "location": "[location()]"
+            }
+        }
+    }

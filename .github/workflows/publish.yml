@@ -1,0 +1,46 @@
+# This is a temporary measure to pre-build the dev container image until GH support for codespaces pre-build is enabled.
+# If the contents of the docker file change then the image version env value here (DEVCONTAINER_VERSION) and in the devcontainer.json file should be changed.
+name: Build and Push Container Image
+
+on:
+  push:
+    tags: 
+    - 'v[0-9]+.[0-9]+.[0-9]+'
+    - 'v[0-9]+.[0-9]+.[0-9]+-preview'
+
+jobs:
+  release:
+    name: Push Container image to GitHub Package Registry
+    runs-on: ubuntu-latest
+    env:
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Log in to the Container registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/bindle-server
+          tags: |
+            type=semver,pattern={{raw}},priority=1
+            type=semver,pattern={{version}},priority=2
+            type=semver,pattern={{major}}.{{minor}},priority=3
+            type=sha,priority=4
+          flavor: |
+            latest=true
+    
+      - name: Build and push image
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

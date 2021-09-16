@@ -1,0 +1,199 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "bindleServerUserName": {
+        "type": "string",
+        "defaultValue": "bindleuser"
+    },
+    "bindleServerPassword": {
+        "type": "securestring"
+    }
+  },
+  "variables": {
+    "bindle_server_state_storage_account_name": "[concat('bindle',uniqueString(resourceGroup().id))]",
+    "bindle_server_state_fileshare": "[Guid(variables('bindle_server_state_storage_account_name'),'bindledata')]",
+    "endPointDNSPrefix": "[replace(variables('bindle_server_state_fileshare'),'-','')]",
+    "endPointDNSName": "[concat(variables('endPointDNSPrefix'),'.',tolower(replace(parameters('location'),' ','')),'.azurecontainer.io')]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('bindle_server_state_storage_account_name')]",
+      "apiVersion": "2019-06-01",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "encryption": {
+          "keySource": "Microsoft.Storage",
+          "services": {
+            "file": {
+              "enabled": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+      "name": "[concat(variables('bindle_server_state_storage_account_name'), '/default/','bindle-', variables('bindle_server_state_fileshare'))]",
+      "apiVersion": "2019-06-01",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[variables('bindle_server_state_storage_account_name')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts/fileServices/shares",
+      "name": "[concat(variables('bindle_server_state_storage_account_name'), '/default/','caddy-', variables('bindle_server_state_fileshare'))]",
+      "apiVersion": "2019-06-01",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[variables('bindle_server_state_storage_account_name')]"
+      ]
+    },
+    {
+      "name": "bindle-server-resource",
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2019-12-01",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts/fileServices/shares', variables('bindle_server_state_storage_account_name'), 'default', concat('bindle-',variables('bindle_server_state_fileshare')))]",
+        "[resourceId('Microsoft.Storage/storageAccounts/fileServices/shares', variables('bindle_server_state_storage_account_name'), 'default', concat('caddy-',variables('bindle_server_state_fileshare')))]"
+      ],
+      "properties": {
+        "containers": [
+          {
+            "name": "caddy",
+            "properties": {
+              "image": "caddy",
+              "ports": [
+                {
+                  "port": 443,
+                  "protocol": "tcp"
+                }
+              ],
+              "command": [
+                "caddy",
+                "run",
+                "--config",
+                "/caddy/Caddyfile"
+              ],
+              "resources": {
+                "requests": {
+                  "cpu": 1.0,
+                  "memoryInGb": 1.5
+                }
+              },
+              "volumeMounts": [
+                {
+                  "name": "caddy-data",
+                  "mountPath": "/data"
+                },
+                {
+                  "name": "caddy-file",
+                  "mountPath": "/caddy"
+                }
+              ]
+            }
+          },
+          {
+            "name": "bindle-server-container",
+            "properties": {
+              "image": "ghcr.io/simongdavies/bindle-server:v1.0.0",
+              "ports": [
+                {
+                  "port": 8080
+                }
+              ],
+              "environmentVariables": [
+                {
+                  "name": "BINDLE_USER",
+                  "value": "[parameters('bindleServerUserName')]"
+                },
+                {
+                    "name": "BINDLE_PASSWORD",
+                    "secureValue": "[parameters('bindleServerPassword')]"
+                }
+              ],
+              "resources": {
+                "requests": {
+                  "cpu": 1.0,
+                  "memoryInGb": 1.5
+                }
+              },
+              "volumeMounts": [
+                {
+                  "name": "bindle-data",
+                  "mountPath": "/data/bindleserver"
+                }
+              ]
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "name": "caddy-data",
+            "azureFile": {
+              "sharename": "[concat('caddy-', variables('bindle_server_state_fileshare'))]",
+              "storageAccountName": "[variables('bindle_server_state_storage_account_name')]",
+              "storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('bindle_server_state_storage_account_name')), '2019-04-01').keys[0].value]"
+            }
+          },
+          {
+            "name": "bindle-data",
+            "azureFile": {
+              "sharename": "[concat('bindle-', variables('bindle_server_state_fileshare'))]",
+              "storageAccountName": "[variables('bindle_server_state_storage_account_name')]",
+              "storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('bindle_server_state_storage_account_name')), '2019-04-01').keys[0].value]"
+            }
+          },
+          {
+            "name": "caddy-file",
+            "secret": {
+              "Caddyfile": "[base64(concat('
+                              {
+                                debug
+                              }
+                              ',variables('endPointDNSName'),' {
+                                log {
+                                    output stdout
+                                    format json
+                                    level debug
+                                }
+                                reverse_proxy {
+                                    to :8080
+                                }
+                              }'))]"
+            }
+          }
+        ],
+        "osType": "Linux",
+        "restartPolicy": "Always",
+        "ipAddress": {
+          "dnsNameLabel": "[variables('endPointDNSPrefix')]",
+          "type": "Public",
+          "ports": [
+            {
+              "protocol": "Tcp",
+              "port": 443
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "Bindle-Server-Url": {
+        "type": "string",
+        "value": "[concat('https://', reference(resourceId('Microsoft.ContainerInstance/containerGroups', 'bindle-server-resource')).ipAddress.fqdn, '/v1')]"
+    }
+  }
+}
