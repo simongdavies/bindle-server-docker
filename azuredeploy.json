@@ -158,20 +158,7 @@
           {
             "name": "caddy-file",
             "secret": {
-              "Caddyfile": "[base64(concat('
-                              {
-                                debug
-                              }
-                              ',variables('endPointDNSName'),' {
-                                log {
-                                    output stdout
-                                    format json
-                                    level debug
-                                }
-                                reverse_proxy {
-                                    to :8080
-                                }
-                              }'))]"
+              "Caddyfile": "[base64(concat('\n{\ndebug\n}',variables('endPointDNSName'),' {\nlog { \noutput stdout\nformat json\nlevel debug\n}\nreverse_proxy {\nto :8080\n}\n}'))]"
             }
           }
         ],
@@ -191,9 +178,9 @@
     }
   ],
   "outputs": {
-    "Bindle-Server-Url": {
+    "bindleUrl": {
         "type": "string",
-        "value": "[concat('https://', reference(resourceId('Microsoft.ContainerInstance/containerGroups', 'bindle-server-resource')).ipAddress.fqdn, '/v1')]"
+        "value": "[concat('export BINDLE_URL=https://', reference(resourceId('Microsoft.ContainerInstance/containerGroups', 'bindle-server-resource')).ipAddress.fqdn, '/v1')]"
     }
   }
 }
