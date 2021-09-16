@@ -1,5 +1,6 @@
 # This is a temporary measure to pre-build the dev container image until GH support for codespaces pre-build is enabled.
 # If the contents of the docker file change then the image version env value here (DEVCONTAINER_VERSION) and in the devcontainer.json file should be changed.
+
 name: Build and Push Container Image
 
 on:
@@ -12,7 +13,6 @@ jobs:
   release:
     name: Push Container image to GitHub Package Registry
     runs-on: ubuntu-latest
-    env:
     permissions:
       contents: read
       packages: write
