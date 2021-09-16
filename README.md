@@ -10,6 +10,11 @@ Once deployed the resource group with contain a container instance named bindle-
 
 [![Deploy To Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimongdavies%2Fbindle-server-docker%2Fmain%2Fazuredeploy.json/createUIDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fsimongdavies%2Fbindle-server-docker%2Fmain%2FcreateUIDefinition.json)
 
+
+Once the deployment is complete you can find the URL of the server in the outputs:
+
+![Template Outputs](images/bindle-server-output.png)
+
 ## Deploy using Cloud Shell
 
  1. Obtain an Azure subscription (sign up for free at [Azure](https://azure.microsoft.com/en-us/free/))

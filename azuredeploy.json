@@ -76,15 +76,21 @@
               "image": "caddy",
               "ports": [
                 {
+                    "port": 80,
+                    "protocol": "tcp"
+                },
+                {
                   "port": 443,
                   "protocol": "tcp"
                 }
               ],
               "command": [
                 "caddy",
-                "run",
-                "--config",
-                "/caddy/Caddyfile"
+                "reverse-proxy",
+                "--from",
+                "[variables('endPointDNSName')]",
+                "--to",
+                ":8080"
               ],
               "resources": {
                 "requests": {
@@ -96,10 +102,6 @@
                 {
                   "name": "caddy-data",
                   "mountPath": "/data"
-                },
-                {
-                  "name": "caddy-file",
-                  "mountPath": "/caddy"
                 }
               ]
             }
@@ -154,12 +156,6 @@
               "storageAccountName": "[variables('bindle_server_state_storage_account_name')]",
               "storageAccountKey": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('bindle_server_state_storage_account_name')), '2019-04-01').keys[0].value]"
             }
-          },
-          {
-            "name": "caddy-file",
-            "secret": {
-              "Caddyfile": "[base64(concat('\n{\ndebug\n}',variables('endPointDNSName'),' {\nlog { \noutput stdout\nformat json\nlevel debug\n}\nreverse_proxy {\nto :8080\n}\n}'))]"
-            }
           }
         ],
         "osType": "Linux",
@@ -168,6 +164,10 @@
           "dnsNameLabel": "[variables('endPointDNSPrefix')]",
           "type": "Public",
           "ports": [
+            {
+                "protocol": "Tcp",
+                "port": 80
+              },
             {
               "protocol": "Tcp",
               "port": 443
