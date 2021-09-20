@@ -23,7 +23,7 @@ Once the deployment is complete you can find the URL of the server in the output
 
 ``` console
 az group create -n bindle-server -l westeurope
-az deployment group create -g bindle-server --template-uri https://raw.githubusercontent.com/simongdavies/bindle-server-docker/main/azuredeploy.json  -p bindleServerUserName=bindleuser -p bindleServerPassword=secret -o json --query 'properties.outputs.bindleUrl.Value'
+az deployment group create -g bindle-server --template-uri https://raw.githubusercontent.com/simongdavies/bindle-server-docker/main/azuredeploy.json  -p bindleServerUserName=bindleuser -p bindleServerPassword=secret -o tsv --query 'properties.outputs.bindleUrl.value'
 ```
 
 Once the deployment sucessfully completes you should see the output similar to the following:

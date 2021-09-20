@@ -16,7 +16,6 @@ RUN mkdir /data && chown ${USER} /data && chgrp ${USER} /data
 RUN su ${USER} -c "mkdir -p /data/bindleserver &&  mkdir -p /data/logs"
 
 ARG BINDLE_PORT="8080"
-ENV BINDLE_URL http://localhost:${BINDLE_PORT}/v1  
 ENV BINDLE_LISTEN_ADDRESS 0.0.0.0:${BINDLE_PORT}     
 
 ARG BINDLE_SERVER_USER=""

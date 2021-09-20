@@ -117,7 +117,7 @@
               ],
               "environmentVariables": [
                 {
-                  "name": "BINDLE_USER",
+                  "name": "BINDLE_USERNAME",
                   "value": "[parameters('bindleServerUserName')]"
                 },
                 {
@@ -180,7 +180,7 @@
   "outputs": {
     "bindleUrl": {
         "type": "string",
-        "value": "[concat('export BINDLE_URL=https://', reference(resourceId('Microsoft.ContainerInstance/containerGroups', 'bindle-server-resource')).ipAddress.fqdn, '/v1')]"
+        "value": "[concat('Update your environment to user the new server:\nexport BINDLE_URL=https://', reference(resourceId('Microsoft.ContainerInstance/containerGroups', 'bindle-server-resource')).ipAddress.fqdn, '/v1')]"
     }
   }
 }
